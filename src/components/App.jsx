@@ -27,19 +27,33 @@ export default class App extends Component {
     filter: '',
   };
 
+  componentDidMount() {
+    const contactsFromLS = localStorage.getItem('contacts');
+    const parsedContacts = JSON.parse(contactsFromLS);
+    if (!parsedContacts) return;
+    this.setState({ contacts: parsedContacts });
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.contacts !== prevState.contacts) {
+      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
+    }
+  }
+
   addContact = newContact => {
-    this.state.contacts.filter(
+
+    const { contacts } = this.state;
+
+    contacts.some(
       contact =>
         contact.name.toLowerCase().trim() ===
           newContact.name.toLowerCase().trim() ||
         contact.number.trim() === newContact.number.trim()
-    ).length
+    )
       ? toast.error(`${newContact.name}: is already in contacts`, notifyOptions)
-      : this.setState(prevState => {
-          return {
-            contacts: [newContact, ...prevState.contacts],
-          };
-        });
+      : this.setState(prevState => ({
+          contacts: [newContact, ...prevState.contacts],
+        }));
   };
 
   deleteContact = contactId => {
@@ -53,14 +67,15 @@ export default class App extends Component {
   };
 
   changeFilter = e => {
-    this.setState({ filter: e.currentTarget.value.toLowerCase() });
+    this.setState({ filter: e.target.value.toLowerCase().trim() });
   };
 
   getVisibleContacts = () => {
     const { filter, contacts } = this.state;
     const normalizedFilter = filter.toLowerCase();
+
     return contacts.filter(contact =>
-      contact.name.toLowerCase().includes(normalizedFilter)
+      contact.name.toLowerCase().trim().includes(normalizedFilter)
     );
   };
 
@@ -74,8 +89,8 @@ export default class App extends Component {
           <Header title="Contacts" />
           <Filter value={filter} onChange={this.changeFilter} />
           <ContactList
-            contacts={visibleContacts}
             onDelete={this.deleteContact}
+            contacts={visibleContacts}
           />
         </Section>
         <ToastContainer />
@@ -85,19 +100,3 @@ export default class App extends Component {
   }
 }
 
-// addContact: Цей метод додає новий контакт до списку контактів (contacts). Він перевіряє, чи вже існує контакт із
-// таким же ім'ям або номером телефону у списку контактів. Якщо контакт вже існує, то відображається сповіщення про
-// помилку за допомогою бібліотеки react-toastify (toast.error(...)) зі спеціально визначеними параметрами notifyOptions.
-//  У протилежному випадку контакт додається до списку контактів за допомогою this.setState(...).
-// deleteContact: Цей метод видаляє контакт зі списку контактів (contacts). Використовуючи this.setState(...),
-// він оновлює стан додатку, фільтруючи контакти за допомогою prevState.contacts.filter(...).
-// changeFilter: Цей метод викликається при зміні тексту у полі фільтрації. Він оновлює стан додатку filter
-// зі значенням, яке користувач ввів у полі пошуку.
-// getVisibleContacts: Цей метод фільтрує контакти за значенням, яке ввів користувач у полі фільтрації. Він повертає
-// масив контактів, які містять введений користувачем текст у своєму імені.
-// render: Цей метод відповідає за відображення додатку. Він містить JSX, який відображає заголовок "Phonebook",
-// форму додавання контакту (ContactForm), заголовок "Contacts", поле фільтрації (Filter) та список контактів (ContactList).
-// Компонент ContactForm отримує метод addContact як проп onAddContact, а компонент ContactList отримує метод deleteContact
-// як проп onDelete. Додатково, в компоненті використовується react-toastify, і для відображення сповіщень використовується
-// компонент ToastContainer.
-// Цей код створює простий додаток "Phonebook" з можливістю додавання, видалення та фільтрації контактів за ім'ям.
